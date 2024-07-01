@@ -7,7 +7,7 @@ import "encoding/base64"
 
 const (
 	hdrProxyAuthResp = "Proxy-Authorization"
-	hdrProxyAuthReq = "Proxy-Authenticate"
+	hdrProxyAuthReq  = "Proxy-Authenticate"
 )
 
 // ProxyAuthorization allows for plugging in arbitrary implementations of the "Proxy-Authorization" handler.

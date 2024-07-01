@@ -73,13 +73,13 @@ type HttpTunnel struct {
 func (t *HttpTunnel) parseProxyUrl(proxyUrl *url.URL) {
 	t.proxyAddr = proxyUrl.Host
 	if strings.ToLower(proxyUrl.Scheme) == "https" {
-		if !strings.Contains(t.proxyAddr, ":") {
-			t.proxyAddr = t.proxyAddr + ":443"
+		if _, _, err := net.SplitHostPort(t.proxyAddr); err != nil {
+			t.proxyAddr = net.JoinHostPort(t.proxyAddr, "443")
 		}
 		t.isTls = true
 	} else {
-		if !strings.Contains(t.proxyAddr, ":") {
-			t.proxyAddr = t.proxyAddr + ":8080"
+		if _, _, err := net.SplitHostPort(t.proxyAddr); err != nil {
+			t.proxyAddr = net.JoinHostPort(t.proxyAddr, "8080")
 		}
 		t.isTls = false
 	}
@@ -108,7 +108,7 @@ func (t *HttpTunnel) Dial(network string, address string) (net.Conn, error) {
 		Header: make(http.Header),
 	}
 	if t.auth != nil && t.auth.InitialResponse() != "" {
-		req.Header.Set(hdrProxyAuthResp, t.auth.Type() + " " + t.auth.InitialResponse())
+		req.Header.Set(hdrProxyAuthResp, t.auth.Type()+" "+t.auth.InitialResponse())
 	}
 	resp, err := t.doRoundtrip(conn, req)
 	if err != nil {
@@ -122,7 +122,7 @@ func (t *HttpTunnel) Dial(network string, address string) (net.Conn, error) {
 			conn.Close()
 			return nil, err
 		}
-		req.Header.Set(hdrProxyAuthResp, t.auth.Type() + " " + responseHdr)
+		req.Header.Set(hdrProxyAuthResp, t.auth.Type()+" "+responseHdr)
 		resp, err = t.doRoundtrip(conn, req)
 		if err != nil {
 			conn.Close()
@@ -149,7 +149,7 @@ func (t *HttpTunnel) doRoundtrip(conn net.Conn, req *http.Request) (*http.Respon
 
 func (t *HttpTunnel) performAuthChallengeResponse(resp *http.Response) (string, error) {
 	respAuthHdr := resp.Header.Get(hdrProxyAuthReq)
-	if !strings.Contains(respAuthHdr, t.auth.Type() + " ") {
+	if !strings.Contains(respAuthHdr, t.auth.Type()+" ") {
 		return "", fmt.Errorf("http_tunnel: expected '%v' Proxy authentication, got: '%v'", t.auth.Type(), respAuthHdr)
 	}
 	splits := strings.SplitN(respAuthHdr, " ", 2)
